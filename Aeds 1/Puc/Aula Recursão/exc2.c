@@ -4,37 +4,26 @@
 
 // int multiplicar(int x, int y)
 // {
-//     return multiplicarOP(x, y, 0, 0);
+//     return potenciacao(x, y, 0, 0);
 // }
 
-int multiplicar(int multiplicando, int multiplicador)
+int potenciacao(int base, int expoente, int acumulador)
 {
-    if(multiplicador == 0)
-    {
-        return 0;
-    }
-
-    return multiplicando + multiplicar(multiplicando , multiplicador - 1);
-}
-
-
-int multiplicarOP(int valor, int multiplicador, int acumulador)
-{
-    if(multiplicador == 0)
+    if(expoente == 0)
     {
         return acumulador;
     }
 
-    multiplicarOP(valor, --multiplicador, acumulador+valor);
+    potenciacao(base, expoente - 1, acumulador * base);
 }
 
 int main()
 {
 
-    int num = 5;
-    int x = 7;
+    int num = 8;
+    int x = 5;
 
-    printf("O resultado é: %d\n", multiplicarOP(num, x, 0));
+    printf("O resultado é: %d\n", potenciacao(num, x, 1));
 
     return 0;
 }
