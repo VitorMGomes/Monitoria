@@ -11,7 +11,7 @@ int divisao(int a, int b, int acum)
         divisao(a - b, b, acum + 1);
     }
 
-    return 
+    return acum;
 }
 
 int main()
