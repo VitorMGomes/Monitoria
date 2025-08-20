@@ -5,13 +5,9 @@
 
 bool desafio(int num, int div, int acumulador)
 {
-    if(div == 0 && acumulador == num)
+    if(div == 0)
     {
-        return true;
-    }
-    else if(div == 0 && acumulador != num)
-    {
-        return false;
+        return acumulador == num;
     }
     if(num % div == 0)
     {
@@ -23,5 +19,13 @@ bool desafio(int num, int div, int acumulador)
 
 int main()
 {
+    int i = 0;
 
+    do
+    {
+        scanf("%d", &i);
+
+        desafio(i, i - 1, 0) ? puts("É perfeito") : puts("Não é perfeito");
+
+    }while(i >= 0);
 }
