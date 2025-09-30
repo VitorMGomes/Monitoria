@@ -1,4 +1,8 @@
+import java.time.*;
 import java.util.*;
+import java.io.*;
+import java.text.*;
+
 
 class Game
 {
@@ -87,6 +91,107 @@ class Game
     public ArrayList<String> getTags() { return tags; }
     public void setTags(ArrayList<String> tags) { this.tags = tags; }
 
+    
+    //? -------------------------------------------------------------- Clone -------------------------------------------------------------- ?//
+    @Override
+    public Game clone()
+    {
+        return new Game(id, name, releaseDate, estimatedOwners, price, supportedLanguages, metacriticScore, userScore, achievements,publishers, developers, categories, genres, tags);
+    }
+
+    
+
+
+
+
+
+
+
+
+
+
+    public void ler(String line) {
+        String newLine = "";
+        boolean insideQuotes = false;
+        int tam = line.length();
+
+        //substituindo as virgulas que separam o as colunas do csv por ";"
+        for (int i = 0; i < tam; i++) {
+            char currentChar = line.charAt(i);
+
+            if (currentChar == '"') {
+                insideQuotes = !insideQuotes;
+            }
+
+            if (!insideQuotes) {
+
+                if (currentChar == ',') {
+                    newLine += ';';
+                } else if (currentChar != '\"') {
+                    newLine += currentChar;
+                }
+            } else {
+
+                if (currentChar != '"' && currentChar != '[' && currentChar != ']') {
+                    newLine += currentChar;
+                }
+            }
+        }
+
+        line = newLine;
+
+        String splitted[] = line.split(";");
+
+        try {
+            setId(Integer.parseInt(splitted[0]));
+            
+        
+        } catch (NumberFormatException e) {
+            System.err.println("Erro ao converter número: " + e.getMessage());
+        } catch (ArrayIndexOutOfBoundsException e) {
+            System.err.println("Erro: dados insuficientes. Verifique o número de campos.");
+        } catch (NullPointerException e) {
+            System.err.println("Erro: dado nulo encontrado.");
+        } catch (Exception e) {
+            System.err.println("Erro inesperado: " + e.getMessage());
+        }
+
+    }
+
+    public static Game[] readDb() {
+
+        Game games[] = new Game[1850];
+        Scanner reader = null;
+    
+        try {
+            reader = new Scanner(new FileReader("/tmp/games.csv"));
+    
+            reader.nextLine();
+    
+            for (int i = 0; reader.hasNextLine(); i++) {
+                String line = reader.nextLine();
+                Game game = new Game();
+    
+                try {
+                    game.ler(line);
+                    games[i] = game;
+                } catch (Exception e) {
+                    System.err.println("Erro ao processar linha " + (i + 1) + ": " + e.getMessage());
+                }
+            }
+    
+        } catch (FileNotFoundException e) {
+            System.err.println("Arquivo não encontrado: " + e.getMessage());
+        } catch (Exception e) {
+            System.err.println("Erro inesperado: " + e.getMessage());
+        } finally {
+            if (reader != null) {
+                reader.close();
+            }
+        }
+    
+        return games;
+    }
 
 }   
 
@@ -99,8 +204,15 @@ class Game
 
 public class Q1
 {
+    public static Game fullDB[] = new Game[1850];
+
     public static void Main(String args[])
     {
+        fullDB = Game.readDb();
 
+        Scanner scanf = new Scanner(System.in);
+
+
+        scanf.close();
     }
 }
