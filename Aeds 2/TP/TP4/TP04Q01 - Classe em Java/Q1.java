@@ -1,7 +1,7 @@
 import java.time.*;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.io.*;
-import java.text.*;
 
 
 class Game
@@ -94,19 +94,83 @@ class Game
     
     //? -------------------------------------------------------------- Clone -------------------------------------------------------------- ?//
     @Override
-    public Game clone()
-    {
-        return new Game(id, name, releaseDate, estimatedOwners, price, supportedLanguages, metacriticScore, userScore, achievements,publishers, developers, categories, genres, tags);
+    public Game clone() {
+        return new Game(
+            id,
+            name,
+            releaseDate,
+            estimatedOwners,
+            price,
+            new ArrayList<>(supportedLanguages),
+            metacriticScore,
+            userScore,
+            achievements,
+            new ArrayList<>(publishers),
+            new ArrayList<>(developers),
+            new ArrayList<>(categories),
+            new ArrayList<>(genres),
+            new ArrayList<>(tags)
+        );
     }
 
-    
+    private static String formatReleaseDate(String input) {
+        
+        String output = "";
 
+        try {
+            // Caso 1: dia, mês e ano
+            if (input.matches("[A-Za-z]{3} \\d{1,2}, \\d{4}")) {
+                DateTimeFormatter inFmt = DateTimeFormatter.ofPattern("MMM d, yyyy", Locale.ENGLISH);
+                LocalDate date = LocalDate.parse(input, inFmt);
+                output = date.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+            }
 
+            // Caso 2: mês e ano (sem dia) -> assume dia "01"
+            if (input.matches("[A-Za-z]{3} \\d{4}")) {
+                DateTimeFormatter inFmt = DateTimeFormatter.ofPattern("MMM yyyy", Locale.ENGLISH);
+                YearMonth ym = YearMonth.parse(input, inFmt);
+                output = ym.atDay(1).format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+            }
 
+            // Caso 3 e 4: apenas ano -> assume "01/01/ANO"
+            if (input.matches("\\d{4}")) {
+                int year = Integer.parseInt(input);
+                LocalDate date = LocalDate.of(year, 1, 1);
+                output = date.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+            }
 
+        } catch (Exception e) {
+            System.err.println("Erro na entrada da data");
+        }
 
+        return output; 
+    }
 
+    private ArrayList<String> formatArrays(String input)
+    {
+        ArrayList<String> array = new ArrayList<>();
+        if(input != null)
+        {
+            String splitted[] = input.split(",");
+            for(int i = 0; i < splitted.length; i++)
+            {
+                String s = splitted[i].trim();
 
+                s = s.replace("\"", "").replace("[", "").replace("]", "");
+
+                if (s.startsWith("'")) {
+                    s = s.substring(1);
+                }
+                if (s.endsWith("'")) {
+                    s = s.substring(0, s.length() - 1);
+                }
+
+                if(!s.isEmpty()) array.add(s);
+            }
+        }
+
+        return array;
+    }
 
 
 
@@ -144,19 +208,34 @@ class Game
 
         try {
             setId(Integer.parseInt(splitted[0]));
-            
-        
-        } catch (NumberFormatException e) {
-            System.err.println("Erro ao converter número: " + e.getMessage());
-        } catch (ArrayIndexOutOfBoundsException e) {
-            System.err.println("Erro: dados insuficientes. Verifique o número de campos.");
-        } catch (NullPointerException e) {
-            System.err.println("Erro: dado nulo encontrado.");
-        } catch (Exception e) {
-            System.err.println("Erro inesperado: " + e.getMessage());
-        }
+            setName(splitted[1]);
+            setReleaseDate(formatReleaseDate(splitted[2]));
+            setEstimatedOwners(Integer.parseInt(splitted[3]));
+            setPrice(Float.parseFloat(splitted[4]));
+            setSupportedLanguages(formatArrays(splitted[5]));
+            setMetacriticScore(Integer.parseInt(splitted[6]));
+            setUserScore(Float.parseFloat(splitted[7]));
+            setAchievements(Integer.parseInt(splitted[8]));
 
+            // aqui tratamos as colunas que podem estar vazias
+            setPublishers(splitted[9].trim().isEmpty() ? new ArrayList<>() : formatArrays(splitted[9]));
+            setDevelopers(splitted[10].trim().isEmpty() ? new ArrayList<>() : formatArrays(splitted[10]));
+            setCategories(splitted[11].trim().isEmpty() ? new ArrayList<>() : formatArrays(splitted[11]));
+            setGenres(splitted[12].trim().isEmpty() ? new ArrayList<>() : formatArrays(splitted[12]));
+            setTags(splitted[13].trim().isEmpty() ? new ArrayList<>() : formatArrays(splitted[13]));
+
+        } catch (NumberFormatException e) {
+            //System.err.println("Erro ao converter número: " + e.getMessage());
+        } catch (ArrayIndexOutOfBoundsException e) {
+            //System.err.println("Erro: dados insuficientes. Verifique o número de campos.");
+        } catch (NullPointerException e) {
+            //System.err.println("Erro: dado nulo encontrado.");
+        } catch (Exception e) {
+            //System.err.println("Erro inesperado: " + e.getMessage());
+        }
     }
+
+
 
     public static Game[] readDb() {
 
@@ -164,7 +243,7 @@ class Game
         Scanner reader = null;
     
         try {
-            reader = new Scanner(new FileReader("/tmp/games.csv"));
+            reader = new Scanner(new FileReader("games.csv"));
     
             reader.nextLine();
     
@@ -193,6 +272,29 @@ class Game
         return games;
     }
 
+
+    @Override
+    public String toString() {
+        return id + " ## " +
+            name + " ## " +
+            releaseDate + " ## " +
+            estimatedOwners + " ## " +
+            price + " ## " +
+            supportedLanguages + " ## " +
+            metacriticScore + " ## " +
+            userScore + " ## " +
+            achievements + " ## " +
+            publishers + " ## " +
+            developers + " ## " +
+            categories + " ## " +
+            genres + " ## " +
+            tags + " ##";
+    }
+
+    public void mostrar()
+    {
+        System.out.println("=> " + this.toString());
+    }
 }   
 
 
@@ -206,12 +308,32 @@ public class Q1
 {
     public static Game fullDB[] = new Game[1850];
 
-    public static void Main(String args[])
+    public static int findID(String input)
+    {
+        int id = Integer.parseInt(input);
+        int pos = 0;
+
+        while((fullDB[pos].getId() != id))
+        {
+            pos++;
+        }
+        
+
+        return pos;
+    }
+
+
+    public static void main(String[] args)
     {
         fullDB = Game.readDb();
 
+
         Scanner scanf = new Scanner(System.in);
 
+        for(String input = scanf.nextLine();!input.equals("FIM"); input = scanf.nextLine())
+        {
+            fullDB[findID(input)].mostrar();    
+        }
 
         scanf.close();
     }
