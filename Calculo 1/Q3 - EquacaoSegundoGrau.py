@@ -1,122 +1,88 @@
-import re
 import math
 
-MSG_FORMATO_ERR = "A equação digitada não está no formato solicitado."
-MSG_NAO_2GRAU   = "A equação não é uma equação polinomial do 2º grau."
-MSG_SEM_RAIZ    = "A equação polinomial do 2º grau não possui raiz real."
-MSG_UMA_RAIZ    = "A raiz da equação polinomial do 2º grau é"
-MSG_DUAS_RAIZES = "As raízes da equação polinomial do 2º grau são"
+EPS = 1e-12  # tolerância numérica
 
-# Expressão regular para validar números reais no formato decimal:
-# - ^ e $ garantem que toda a string seja verificada (do início ao fim).
-# - [+-]? aceita opcionalmente um sinal positivo ou negativo.
-# - \d+(\.\d+)? aceita um número inteiro com parte decimal opcional (ex.: 123, 123.45).
-# - |\.d+ aceita números sem parte inteira, mas com ponto seguido de decimais (ex.: .5, .123).
-# Exemplos válidos: "42", "-3.5", "+0.99", ".75"
-# Exemplos inválidos: "3,5", "12..3", ".", "abc"
-float_re = re.compile(r'^[+-]?(\d+(\.\d+)?|\.\d+)$')
+def fmt(x: float) -> str:
+    """Formata evitando -0.0 e com até 10 dígitos significativos."""
+    if abs(x) < EPS:
+        x = 0.0
+    return f"{x:.10g}"
 
-def _parse_side_quadratic(side: str):
+def _parse_coef(s: str, allow_x2: bool = False, allow_x: bool = False) -> float:
     """
-    Converte um lado textual da equação em (A, B, C),
-    onde A é o coeficiente de x^2, B de x e C a constante.
-    Aceita: 'x^2' ou 'x²', sinal +/-, coeficiente implícito, reais com ponto ou vírgula.
+    Converte a entrada em número:
+      - sempre aceita números com ponto ou vírgula (ex.: 3.5, 3,5)
+      - se allow_x2=True: aceita 'x^2', '+x^2', '-x^2', '5x^2', '5,2x^2' (e 'x²')
+      - se allow_x=True : aceita 'x', '+x', '-x', '5x', '5,2x'
     """
-    s = side.strip().lower().replace(",", ".")
-    # normalizar x² para x^2
-    s = s.replace("x²", "x^2")
+    s = s.strip().lower().replace(" ", "").replace(",", ".").replace("x²", "x^2")
 
-    if not s:
-        raise ValueError("lado vazio")
+    # prioridade: tentar x^2 primeiro
+    if allow_x2 and s.endswith("x^2"):
+        coef = s[:-3]
+        if coef in ("", "+"):
+            return 1.0
+        if coef == "-":
+            return -1.0
+        return float(coef)
 
-    # quebrar por sinais
-    s = s.replace("-", "+-")
-    if s.startswith("+"):
-        s = s[1:]
-    terms = [t.strip() for t in s.split("+") if t.strip()]
+    # depois termo linear 'x'
+    if allow_x and s.endswith("x"):
+        coef = s[:-1]
+        if coef in ("", "+"):
+            return 1.0
+        if coef == "-":
+            return -1.0
+        return float(coef)
 
-    A = B = C = 0.0
+    # se ainda contiver 'x' aqui, é inválido para esse campo
+    if "x" in s:
+        raise ValueError("símbolo 'x' não permitido aqui")
 
-    for t in terms:
-        # Termos com x^2
-        if "x^2" in t:
-            if t.count("x") != 1 or not t.endswith("x^2"):
-                raise ValueError("termo quadrático malformado")
-            raw = t[:-3].strip()  # antes de 'x^2'
-            if raw in ("", "+"):
-                coef = 1.0
-            elif raw == "-":
-                coef = -1.0
-            else:
-                if not float_re.match(raw):
-                    raise ValueError("coeficiente quadrático inválido")
-                coef = float(raw)
-            A += coef
-        # Termos lineares (x)
-        elif "x" in t:
-            if t.count("x") != 1 or not t.endswith("x"):
-                raise ValueError("termo linear malformado")
-            raw = t[:-1].strip()
-            if raw in ("", "+"):
-                coef = 1.0
-            elif raw == "-":
-                coef = -1.0
-            else:
-                if not float_re.match(raw):
-                    raise ValueError("coeficiente linear inválido")
-                coef = float(raw)
-            B += coef
-        # Termo constante
-        else:
-            if not float_re.match(t):
-                raise ValueError("constante inválida")
-            C += float(t)
+    return float(s)
 
-    return A, B, C
+def ler_coef(rotulo: str, *, allow_x2: bool = False, allow_x: bool = False) -> float:
+    while True:
+        try:
+            return _parse_coef(input(f"{rotulo}: "), allow_x2=allow_x2, allow_x=allow_x)
+        except Exception:
+            print("Entrada inválida.")
 
-def resolver_equacao_2grau(expr: str) -> str:
-    """
-    Resolve Ax^2 + Bx + C = Dx^2 + Ex + F quando possível,
-    seguindo as instruções do enunciado.
-    """
-    if expr.count("=") != 1:
-        return MSG_FORMATO_ERR
+def main():
+    print("Resolver Ax^2 + Bx + C = Dx^2 + Ex + F (entradas A, B, C, D, E, F)")
+    # A, B, C, D, E, F
+    A = ler_coef("A (ex.: x^2, -x^2, 5x^2 ou número)", allow_x2=True)
+    B = ler_coef("B (ex.: x, -x, 5x ou número)", allow_x=True)
+    C = ler_coef("C (número)")
+    D = ler_coef("D (ex.: x^2, -x^2, 5x^2 ou número)", allow_x2=True)
+    E = ler_coef("E (ex.: x, -x, 5x ou número)", allow_x=True)
+    F = ler_coef("F (número)")
 
-    left, right = expr.split("=")
-    try:
-        A, B, C = _parse_side_quadratic(left)
-        D, E, F = _parse_side_quadratic(right)
-    except ValueError:
-        return MSG_FORMATO_ERR
-
-    # a = A - D, b = B - E, c = C - F
+    # reduzir para ax^2 + bx + c = 0
     a = A - D
     b = B - E
     c = C - F
 
-    # Se a == 0, não é do 2º grau
-    if a == 0:
-        return MSG_NAO_2GRAU
+    # checagem de grau
+    if abs(a) <= EPS:
+        print("Não é equação do 2º grau (a = 0).")
+        return
 
     delta = b*b - 4*a*c
 
-    if delta < 0:
-        return MSG_SEM_RAIZ
+    if delta < -EPS:
+        print("Sem raízes reais.")
+        return
 
-    # delta >= 0 → calcular raízes
-    sqrt_delta = math.sqrt(delta)
+    # delta >= 0
+    sqrt_delta = math.sqrt(max(delta, 0.0))
     x1 = (-b + sqrt_delta) / (2*a)
     x2 = (-b - sqrt_delta) / (2*a)
 
-    if delta == 0:
-        # Uma raiz real (x1 == x2)
-        return f"{MSG_UMA_RAIZ} x = {x1}"
+    if abs(delta) <= EPS:
+        print(f"x = {fmt(x1)}")
     else:
-        return f"{MSG_DUAS_RAIZES} x1 = {x1} e x2 = {x2}"
+        print(f"x1 = {fmt(x1)}, x2 = {fmt(x2)}")
 
 if __name__ == "__main__":
-    try:
-        entrada = input("Digite a equação (ex.: 3 + 4x^2 - x = 2 - x^2 + 5x): ")
-    except EOFError:
-        entrada = ""
-    print(resolver_equacao_2grau(entrada))
+    main()

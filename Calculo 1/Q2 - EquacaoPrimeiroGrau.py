@@ -1,89 +1,62 @@
-import re
+# Equação de 1º grau: a x + b = c x + d
+# Entrada passo a passo: A, B, C, D
+# Agora A e C podem ser digitados como "5x", "-x", "x" (interpreta 1x e -1x).
+# Saídas:
+#  - Se A == C → "A equação não é uma equação polinomial do 1º grau."
+#  - Caso contrário → "A raiz da equação polinomial do 1º grau é x = ..."
 
-MSG_FORMATO_ERR = "A equação digitada não está no formato solicitado."
-MSG_NAO_1GRAU   = "A equação não é uma equação polinomial do 1º grau."
-MSG_RAIZ        = "A raiz da equação polinomial do 1º grau é"
+EPS = 1e-12
 
-# Expressão regular para validar números reais no formato decimal:
-# - ^ e $ garantem que toda a string seja verificada (do início ao fim).
-# - [+-]? aceita opcionalmente um sinal positivo ou negativo.
-# - \d+(\.\d+)? aceita um número inteiro com parte decimal opcional (ex.: 123, 123.45).
-# - |\.d+ aceita números sem parte inteira, mas com ponto seguido de decimais (ex.: .5, .123).
-# Exemplos válidos: "42", "-3.5", "+0.99", ".75"
-# Exemplos inválidos: "3,5", "12..3", ".", "abc"
-float_re = re.compile(r'^[+-]?(\d+(\.\d+)?|\.\d+)$')
-
-
-def _parse_side(side: str):
+def ler_real(rotulo: str, allow_x: bool = False) -> float:
     """
-    Converte um lado textual da equação em (coef_x, constante).
-    Aceita: números reais (., ,), 'x' (ou 'X'), sinais +/-, espaços.
-    Retorna (coef_x, const) ou levanta ValueError para formato inválido.
+    Lê um número real (aceita vírgula/ponto). Se allow_x=True, aceita também:
+      "x"  ->  1.0
+      "+x" ->  1.0
+      "-x" -> -1.0
+      "5x" ->  5.0   (também aceita "5.2x" / "5,2x")
     """
-    s = side.strip().lower().replace("x", "x").replace(",", ".")
-    if not s:
-        raise ValueError("lado vazio")
-
-    # Normaliza: transforma '-' em '+-' e divide em termos por '+'
-    # Ex.: "2 - x + 3.5" -> "2 +- x + 3.5" -> ["2", "- x", "3.5"]
-    s = s.replace("-", "+-")
-    if s.startswith("+"):
-        s = s[1:]
-    terms = [t.strip() for t in s.split("+") if t.strip()]
-
-    coef_x = 0.0
-    const  = 0.0
-
-    for t in terms:
-        if "x" in t:
-            # Termo com x; não deve haver nada depois de 'x'
-            if t.count("x") != 1 or not t.endswith("x"):
-                raise ValueError("termo com x malformado")
-            raw_coef = t[:-1].strip()
-            if raw_coef in ("", "+"):
-                c = 1.0
-            elif raw_coef == "-":
-                c = -1.0
+    while True:
+        s_raw = input(f"Digite {rotulo}: ")
+        s = s_raw.strip().lower().replace(" ", "").replace(",", ".")
+        try:
+            if allow_x and s.endswith("x"):
+                coef = s[:-1]  # tudo antes do 'x'
+                if coef in ("", "+"):
+                    return 1.0
+                if coef == "-":
+                    return -1.0
+                return float(coef)
+            if "x" in s:
+                # 'x' não é permitido quando allow_x=False
+                raise ValueError
+            return float(s)
+        except ValueError:
+            if allow_x:
+                print("Entrada inválida. Use números (ex.: 3,5) ou anexe 'x' (ex.: 5x, -x, x).")
             else:
-                if not float_re.match(raw_coef):
-                    raise ValueError("coeficiente inválido")
-                c = float(raw_coef)
-            coef_x += c
-        else:
-            # Termo constante
-            if not float_re.match(t):
-                raise ValueError("constante inválida")
-            const += float(t)
+                print("Entrada inválida. Use apenas números (ex.: 3,5 ou 3.5).")
 
-    return coef_x, const
+def fmt(x: float) -> str:
+    """Formata número evitando -0.0 e com até 10 dígitos significativos."""
+    if abs(x) < EPS:
+        x = 0.0
+    return f"{x:.10g}"
 
+def resolver_1grau():
+    print("Resolver a x + b = c x + d")
+    a = ler_real("A (pode usar 5x, -x, x)", allow_x=True)
+    b = ler_real("B")
+    c = ler_real("C (pode usar 5x, -x, x)", allow_x=True)
+    d = ler_real("D")
 
-def resolver_equacao(expr: str) -> str:
-    """
-    Resolve ax + b = cx + d quando possível.
-    Retorna mensagens conforme o enunciado.
-    """
-    if expr.count("=") != 1:
-        return MSG_FORMATO_ERR
+    if abs(a - c) <= EPS:
+        print("A equação não é uma equação polinomial do 1º grau.")
+        return
 
-    left, right = expr.split("=")
-    try:
-        a, b = _parse_side(left)
-        c, d = _parse_side(right)
-    except ValueError:
-        return MSG_FORMATO_ERR
-
-    # Verificação do 1º grau conforme a regra dada
-    if a == c:
-        return MSG_NAO_1GRAU
-
-    x = (d - b) / (a - c)
-    return f"{MSG_RAIZ} x = {x}"
-
+    a = a - c 
+    b = b - d 
+    x = -b / a
+    print(f"A raiz da equação polinomial do 1º grau é x = {fmt(x)}")
 
 if __name__ == "__main__":
-    try:
-        entrada = input("Digite a equação (ex.: 3 + 4x = 2 - x): ")
-    except EOFError:
-        entrada = ""
-    print(resolver_equacao(entrada))
+    resolver_1grau()
