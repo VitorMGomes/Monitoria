@@ -1,12 +1,5 @@
-import math
-
 EPS = 1e-9  # tolerância numérica para comparar com zero
 
-def parse_real(s: str) -> float:
-    """Aceita 3,14 ou 3.14 e converte para float."""
-    return float(s.strip().replace(",", "."))
-
-# --- defina aqui as equações (lado esquerdo - lado direito) ---
 def f1(x: float) -> float:
     # Eq. 1: x^4 - 4x^3 - x^2 + 16x - 12 = 0
     return x**4 - 4*x**3 - x**2 + 16*x - 12
@@ -19,7 +12,6 @@ def f3(x: float) -> float:
     # Eq. 3 (assumida): x^2 = 16  ->  x^2 - 16 = 0
     # Se a sua eq. 3 for, por exemplo, sqrt(x) = 16, use: return math.sqrt(x) - 16
     return x*x - 16.0
-# --------------------------------------------------------------
 
 def eh_solucao(func, x: float, eps: float = EPS) -> bool:
     return abs(func(x)) <= eps
@@ -33,9 +25,9 @@ def main():
     op = input("Digite 1, 2 ou 3: ").strip()
 
     try:
-        x = parse_real(input("Digite o valor de x: "))
+        x = float(input("Digite o valor de x: "))
     except Exception:
-        print("Entrada inválida para x.")
+        print("Entrada inválida para x. Digite apenas valoras float ou inteiros (No caso de float, use '.' para separar a parte inteira da decimal)")
         return
 
     if op == "1":

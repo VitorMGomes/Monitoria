@@ -8,55 +8,15 @@ def fmt(x: float) -> str:
         x = 0.0
     return f"{x:.10g}"
 
-def _parse_coef(s: str, allow_x2: bool = False, allow_x: bool = False) -> float:
-    """
-    Converte a entrada em número:
-      - sempre aceita números com ponto ou vírgula (ex.: 3.5, 3,5)
-      - se allow_x2=True: aceita 'x^2', '+x^2', '-x^2', '5x^2', '5,2x^2' (e 'x²')
-      - se allow_x=True : aceita 'x', '+x', '-x', '5x', '5,2x'
-    """
-    s = s.strip().lower().replace(" ", "").replace(",", ".").replace("x²", "x^2")
-
-    # prioridade: tentar x^2 primeiro
-    if allow_x2 and s.endswith("x^2"):
-        coef = s[:-3]
-        if coef in ("", "+"):
-            return 1.0
-        if coef == "-":
-            return -1.0
-        return float(coef)
-
-    # depois termo linear 'x'
-    if allow_x and s.endswith("x"):
-        coef = s[:-1]
-        if coef in ("", "+"):
-            return 1.0
-        if coef == "-":
-            return -1.0
-        return float(coef)
-
-    # se ainda contiver 'x' aqui, é inválido para esse campo
-    if "x" in s:
-        raise ValueError("símbolo 'x' não permitido aqui")
-
-    return float(s)
-
-def ler_coef(rotulo: str, *, allow_x2: bool = False, allow_x: bool = False) -> float:
-    while True:
-        try:
-            return _parse_coef(input(f"{rotulo}: "), allow_x2=allow_x2, allow_x=allow_x)
-        except Exception:
-            print("Entrada inválida.")
-
 def main():
-    print("Resolver Ax^2 + Bx + C = Dx^2 + Ex + F (entradas A, B, C, D, E, F)")
+    print("Resolver Ax^2 + Bx + C = Dx^2 + Ex + F (entradas A, B, C, D, E, F -> sempre numeros inteiros ou float com '.' como separacao)")
     # A, B, C, D, E, F
-    A = ler_coef("A (ex.: x^2, -x^2, 5x^2 ou número)", allow_x2=True)
-    B = ler_coef("B (ex.: x, -x, 5x ou número)", allow_x=True)
-    C = ler_coef("C (número)")
-    D = ler_coef("D (ex.: x^2, -x^2, 5x^2 ou número)", allow_x2=True)
-    E = ler_coef("E (ex.: x, -x, 5x ou número)", allow_x=True)
-    F = ler_coef("F (número)")
+    A = float(input("Digite o valor de A: "))
+    B = float(input("Digite o valor de B: "))
+    C = float(input("Digite o valor de C: "))
+    D = float(input("Digite o valor de D: "))
+    E = float(input("Digite o valor de E: ")) 
+    F = float(input("Digite o valor de F: "))
 
     # reduzir para ax^2 + bx + c = 0
     a = A - D
@@ -64,22 +24,21 @@ def main():
     c = C - F
 
     # checagem de grau
-    if abs(a) <= EPS:
-        print("Não é equação do 2º grau (a = 0).")
+    if abs(a) == 0:
+        print("Não é equação do 2º grau (a = 0)")
         return
 
     delta = b*b - 4*a*c
 
-    if delta < -EPS:
-        print("Sem raízes reais.")
+    if delta < 0:
+        print("Sem raízes reais")
         return
+    else:    
+        sqrt_delta = math.sqrt(max(delta, 0.0))
+        x1 = (-b + sqrt_delta) / (2*a)
+        x2 = (-b - sqrt_delta) / (2*a)
 
-    # delta >= 0
-    sqrt_delta = math.sqrt(max(delta, 0.0))
-    x1 = (-b + sqrt_delta) / (2*a)
-    x2 = (-b - sqrt_delta) / (2*a)
-
-    if abs(delta) <= EPS:
+    if abs(delta) <= 0:
         print(f"x = {fmt(x1)}")
     else:
         print(f"x1 = {fmt(x1)}, x2 = {fmt(x2)}")
